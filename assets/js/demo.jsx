@@ -34,7 +34,7 @@ class Demo extends React.Component {
 function Side(params) {
   if (params.show) {
     return (
-      <div id="side-0" className="side col" onMouseOver={ () => params.toggle() }>
+      <div id="side-0" className="side col">
         <Button onClick={ () => alert("cheater") }>Click Me</Button>
       </div>
     );
@@ -47,4 +47,3 @@ function Side(params) {
     );
   }
 }
-

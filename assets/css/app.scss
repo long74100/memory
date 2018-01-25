@@ -5,6 +5,17 @@
 .side { padding: 4ex; text-align: center; }
 h1 { text-align: center; }
 
-.row {
-  text-align: center;
+.board {
+    max-width: 50%;
+    margin: 2em auto;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    justify-content: center;
+    grid-gap :10px;
+
+}
+
+.tile {
+  padding: 3em;
+  border: 1px solid;
 }

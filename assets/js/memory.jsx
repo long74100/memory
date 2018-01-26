@@ -6,6 +6,15 @@ export default function run_memory(root) {
   ReactDOM.render(<MemoryGame />, root);
 }
 
+// App state for MemroyGame is:
+// {
+//    letters: String    // the letters used for the game
+//    board:   [int]     // the current board/ location for the letters
+//    completed: String  // the letters(tiles) that have been completed
+//    activeTile: String // the letter of the tile that has been clicked
+//    clicks: int        // the total number of clicks
+// }
+//
 
 class MemoryGame extends React.Component {
   constructor(props) {
@@ -18,18 +27,18 @@ class MemoryGame extends React.Component {
       clicks: 0,
 
     };
-
   }
 
 
   componentDidMount() {
-
-    function initializeBoard(params) {
+    // shuffle letters and put them on the board
+    function makeBoard(params) {
         let letters = params.letters;
+        // duplicate each letter to complete a full board
         let fullBoard = letters.repeat(2).split("");
         let i = 0;
         while (i < fullBoard.length) {
-          var r = Math.floor(Math.random() * Math.floor(fullBoard.length));
+          var r = Math.floor(Math.random() * fullBoard.length);
           let temp = fullBoard[r];
           fullBoard[r] = fullBoard[i];
           fullBoard[i] = temp;
@@ -37,13 +46,14 @@ class MemoryGame extends React.Component {
         }
         console.log(fullBoard);
         return fullBoard;
-
     }
 
-    let fullBoard = initializeBoard(this.state);
+    let board = makeBoard(this.state);
     let state = _.extend(this.state, {
-      board: fullBoard,
+      board: board,
     });
+
+
     this.setState(state);
   }
 
@@ -57,6 +67,25 @@ class MemoryGame extends React.Component {
 
   completed() {
     return this.state.completed;
+  }
+
+  checkTile(tile) {
+    if (this.state.activeTile === "") {
+      let state = _.extend(this.state, {
+        activeTile: tile, });
+      this.setState(state);
+
+    } else {
+      let completed = this.state.completed;
+      if (tile === this.state.activeTile) {
+        completed = completed += tile;
+      }
+      let state = _.extend(this.state, {
+        completed: completed,
+        activeTile: "", });
+      this.setState(state);
+
+    }
   }
 
   render() {
@@ -77,12 +106,15 @@ function Board(props) {
 
   let boxes = _.map(tiles, (tile, ii) => {
     let display = completed.includes(tile) ? tile : " ";
-    return <div className="tile" key={ii}> {display} </div>;
+    return <div className="tile col-3" key={ii} onClick= {
+      () => props.root.checkTile(tile)}> {display} </div>;
     });
 
     return (
       <div className="board">
+      <div className="row">
         {boxes}
+        </div>
       </div>
     );
   }

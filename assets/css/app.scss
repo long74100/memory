@@ -5,17 +5,23 @@
 .side { padding: 4ex; text-align: center; }
 h1 { text-align: center; }
 
-.board {
-    max-width: 50%;
-    margin: 2em auto;
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    justify-content: center;
-    grid-gap :10px;
+// .board {
+//     max-width: 50%;
+//     margin: 2em auto;
+//     display: grid;
+//     grid-template-columns: repeat(4, 1fr);
+//     justify-content: center;
+//     grid-gap :10px;
+//
+// }
 
+.container {
+  margin: 2em auto;
 }
 
 .tile {
-  padding: 3em;
+  padding: 3em 0;
   border: 1px solid;
+  text-align: center;
+  font-size: 1em;
 }

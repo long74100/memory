@@ -2,8 +2,8 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import { Button } from 'reactstrap';
 
-export default function run_memory(root) {
-  ReactDOM.render(<MemoryGame />, root);
+export default function run_memory(letters,root) {
+  ReactDOM.render(<MemoryGame letters={letters} />, root);
 }
 
 // App state for MemroyGame is:
@@ -20,7 +20,7 @@ class MemoryGame extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      letters: "ABCDEFGH",
+      letters: props.letters,
       board: [],
       completed: "",
       activeTile: "",
@@ -33,26 +33,20 @@ class MemoryGame extends React.Component {
   componentDidMount() {
     // shuffle letters and put them on the board
     function makeBoard(params) {
-        let letters = params.letters;
-        // duplicate each letter to complete a full board
-        let fullBoard = letters.repeat(2).split("");
-        let i = 0;
-        while (i < fullBoard.length) {
-          var r = Math.floor(Math.random() * fullBoard.length);
-          let temp = fullBoard[r];
-          fullBoard[r] = fullBoard[i];
-          fullBoard[i] = temp;
-          i++;
-        }
-        console.log(fullBoard);
-        return fullBoard;
+      const board = [];
+      // duplicate each letter to complete a full board
+      const letters = params.letters.repeat(2);
+      for (let i = 0; i < letters.length; i++) {
+        board.push({ value: letters.charAt(i), status: "hidden" });
+      }
+
+      return board;
     }
 
-    let board = makeBoard(this.state);
+    let board = this.shuffleArray(makeBoard(this.state));
     let state = _.extend(this.state, {
       board: board,
     });
-
 
     this.setState(state);
   }
@@ -69,23 +63,50 @@ class MemoryGame extends React.Component {
     return this.state.completed;
   }
 
-  checkTile(tile) {
-    if (this.state.activeTile === "") {
-      let state = _.extend(this.state, {
-        activeTile: tile, });
-      this.setState(state);
+  active() {
+    return this.state.activeTile;
+  }
 
-    } else {
-      let completed = this.state.completed;
-      if (tile === this.state.activeTile) {
-        completed = completed += tile;
-      }
+  shuffleArray(array) {
+    let ar = array.slice(0);
+    // shuffle the board
+    let i = 0;
+    while (i < ar.length) {
+      var r = Math.floor(Math.random() * ar.length);
+      let temp = ar[r];
+      ar[r] = ar[i];
+      ar[i] = temp;
+      i++;
+    }
+    return ar;
+  }
+
+  checkTile(tile, ii) {
+    console.log(tile, ii);
+    if (this.state.activeTile === "") {
+      let board = this.state.board.slice(0);
+      board[ii].status = "active";
       let state = _.extend(this.state, {
-        completed: completed,
-        activeTile: "", });
-      this.setState(state);
+        board: board });
+        this.setState(state);
+    } else {
+      let board = this.state.board.slice(0);
+      if (tile.value === activeTile) {
+        board = _map(board, (tile, ii) => {
+          let t = tile.value === activeTile ? { value: tile.value, status: "complete"} : tile;
+          return t;
+        })
+      } else {
+
+      }
+
+      activeTile = "";
+      let state = _.extend(this.state, {
+        board: board });
+        this.setState(state);
 
     }
+
   }
 
   render() {
@@ -101,20 +122,19 @@ class MemoryGame extends React.Component {
 function Board(props) {
   let root = props.root;
   let tiles = root.tiles();
-  let completed = root.completed();
   //return <div>{tiles.length}</div>
 
   let boxes = _.map(tiles, (tile, ii) => {
-    let display = completed.includes(tile) ? tile : " ";
-    return <div className="tile col-3" key={ii} onClick= {
-      () => props.root.checkTile(tile)}> {display} </div>;
-    });
+    let display =  tile.status === "active" ? tile.value : " ";
+    return <div className="tile col-3 col-md-offset-5 card bg-light" key={ii} onClick= {
+        () => root.checkTile(tile, ii)}> {display} </div>;
+      });
 
-    return (
-      <div className="board">
-      <div className="row">
-        {boxes}
+      return (
+        <div className="board">
+          <div className="row">
+            {boxes}
+          </div>
         </div>
-      </div>
-    );
-  }
+      );
+    }

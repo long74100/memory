@@ -24,8 +24,9 @@ import run_memory from "./memory";
 
 function init() {
   let root = document.getElementById('game');
-  run_memory(root);
+  run_memory("ABCDEFGH", root);
 }
+
 
 // Use jQuery to delay until page loaded.
 $(init);

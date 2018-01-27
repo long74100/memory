@@ -23,7 +23,7 @@ class MemoryGame extends React.Component {
       letters: props.letters,
       board: [],
       completed: "",
-      activeTile: "",
+      activeTile: -1,
       clicks: 0,
 
     };
@@ -39,13 +39,15 @@ class MemoryGame extends React.Component {
       for (let i = 0; i < letters.length; i++) {
         board.push({ value: letters.charAt(i), status: "hidden" });
       }
-
       return board;
     }
 
     let board = this.shuffleArray(makeBoard(this.state));
     let state = _.extend(this.state, {
       board: board,
+      completed: "",
+      activeTile: -1,
+      clicks: 0,
     });
 
     this.setState(state);
@@ -67,6 +69,12 @@ class MemoryGame extends React.Component {
     return this.state.activeTile;
   }
 
+  // reset the game
+  reset() {
+    this.componentDidMount();
+  }
+
+  // shuffle an array
   shuffleArray(array) {
     let ar = array.slice(0);
     // shuffle the board
@@ -82,52 +90,95 @@ class MemoryGame extends React.Component {
   }
 
   checkTile(tile, ii) {
-    console.log(tile, ii);
-    if (this.state.activeTile === "") {
-      let board = this.state.board.slice(0);
-      board[ii].status = "active";
-      let state = _.extend(this.state, {
-        board: board });
-        this.setState(state);
+    console.log(this.state.activeTile);
+    if (this.state.activeTile == -1) {
+      alert("hi");
+      this.flipActive(ii);
+        // var myVar;
+        //
+        // function myFunction() {
+        //     myVar = setTimeout(alertFunc, 3000);
+        // }
+        //
+        // function alertFunc() {
+        //     alert("Hello!");
+        // }
+        // myFunction();
+
     } else {
-      let board = this.state.board.slice(0);
-      if (tile.value === activeTile) {
-        board = _map(board, (tile, ii) => {
-          let t = tile.value === activeTile ? { value: tile.value, status: "complete"} : tile;
-          return t;
-        })
-      } else {
-
+      if (tile.value === this.state.board[this.state.activeTile]) {
+          alert("yo");
       }
-
-      activeTile = "";
-      let state = _.extend(this.state, {
-        board: board });
-        this.setState(state);
 
     }
 
   }
 
+  // changes the status of the tile at the position to active
+  flipActive(pos) {
+    let board = this.state.board.slice(0);
+    board[pos].status = "active";
+    let state = _.extend(this.state, {
+      activeTile: pos,
+      board: board,
+      clicks: this.state.clicks + 1 });
+    this.setState(state);
+  }
+
+  flipComplete(tile, pos) {
+    // let board = this.state.board.slice(0);
+    // if (tile.value === activeTile) {
+    //   board = _map(board, (tile, ii) => {
+    //     let t = tile.value === activeTile ? { value: tile.value, status: "complete"} : tile;
+    //     return t;
+    //   })
+    // } else {
+
+    }
+
+  //   // activeTile = ;
+  //   // let state = _.extend(this.state, {
+  //   //   board: board });
+  //   //   this.setState(state);
+  // }
+
   render() {
     return (
       <div className ="container">
         <Board root={this} />
+        <div className="row gadgets">
+        <Clicks clicks={this.state.clicks} />
+        <Reset reset={this.reset.bind(this)} />
+        </div>
       </div>
     );
   }
 
 }
 
+function Clicks(params) {
+  return <div className="col-md-6">
+  <p><b>Clicks: {params.clicks}</b></p>
+  </div>;
+}
+
+function Reset(params) {
+  return (
+    <div className="col-md-6">
+    <Button onClick={params.reset}>Reset Game</Button>
+    </div>
+  )
+
+}
+
 function Board(props) {
   let root = props.root;
   let tiles = root.tiles();
-  //return <div>{tiles.length}</div>
 
   let boxes = _.map(tiles, (tile, ii) => {
-    let display =  tile.status === "active" ? tile.value : " ";
-    return <div className="tile col-3 col-md-offset-5 card bg-light" key={ii} onClick= {
-        () => root.checkTile(tile, ii)}> {display} </div>;
+    let display =  tile.status === "active" ? tile.value : "?";
+    return <div className="tile col-md-3 card" key={ii} onClick= {
+        () => root.checkTile(tile, ii)}> <p>{display}</p> </div>;
       });
 
       return (

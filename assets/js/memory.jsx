@@ -23,9 +23,11 @@ class MemoryGame extends React.Component {
       board: [],
       activeTilePos: -1,
       clicks: 0,
+      disableClick: false,
     };
 
     this.resetActiveTiles = this.resetActiveTiles.bind(this);
+    this.changeClickPerm = this.changeClickPerm.bind(this);
   }
 
 
@@ -48,6 +50,7 @@ class MemoryGame extends React.Component {
       board: board,
       activeTilePos: -1,
       clicks: 0,
+      disableClick:false,
     });
 
     this.setState(state);
@@ -55,14 +58,6 @@ class MemoryGame extends React.Component {
 
   componentWillUnmount() {
     clearInterval(this.timerID);
-  }
-
-  tiles() {
-    return this.state.board;
-  }
-
-  active() {
-    return this.state.activeTile;
   }
 
   // reset the game
@@ -95,15 +90,19 @@ class MemoryGame extends React.Component {
       if (pos != activeTilePos) {
         if (tile.value === board[activeTilePos].value) {
           this.flipTile(pos, "complete");
-          this.resetActiveTiles();
+          //this.resetActiveTiles();
         } else {
           this.flipTile(pos, "active");
           // reset the active tiles (Flip them back to hidden)
-          let reset = this.resetActiveTiles;
-          setTimeout(function() {
-            reset();
-          }, 2000);
         }
+
+        let reset = this.resetActiveTiles;
+        let changeClickPerm = this.changeClickPerm;
+        changeClickPerm();
+        setTimeout(function() {
+          reset();
+          changeClickPerm();
+        }, 1500);
       }
     }
 
@@ -142,15 +141,23 @@ class MemoryGame extends React.Component {
     this.setState(state);
   }
 
+  changeClickPerm() {
+    let state = _.extend(this.state, {
+      disableClick: !this.state.disableClick,
+    });
+    this.setState(state);
+    console.log(this.state.disableClick);
+  }
+
 
   render() {
     return (
       <div className ="container">
-      <Board root={this} />
-      <div className="row gadgets">
-      <Clicks clicks={this.state.clicks} />
-      <Reset reset={this.reset.bind(this)} />
-      </div>
+        <Board root={this} />
+          <div className="row gadgets">
+          <Clicks clicks={this.state.clicks} />
+          <Reset reset={this.reset.bind(this)} />
+        </div>
       </div>
       );
   }
@@ -158,8 +165,10 @@ class MemoryGame extends React.Component {
 }
 
 function Clicks(params) {
-  return <div className="col-md-6">
+  return (
+    <div className="col-md-6">
         <p><b>Clicks: {params.clicks}</b></p></div>
+      );
 }
 
 function Reset(params) {
@@ -167,25 +176,38 @@ function Reset(params) {
     <div className="col-md-6">
     <Button onClick={params.reset}>Reset Game</Button>
     </div>
-    )
+  );
 
 }
 
 function Board(props) {
   let root = props.root;
-  let tiles = root.tiles();
+  let tiles = root.state.board;
 
-  let boxes = _.map(tiles, (tile, ii) => {
-    let display =  (tile.status === "active" || tile.status === "complete") ? tile.value : "?";
-    return <div className="tile col-md-3 card" key={ii} onClick= {
-      () => root.checkTile(tile, ii)}> <p>{display}</p> </div>;
+  let tileBoxes = _.map(tiles, (tile, ii) => {
+    function classNames() {
+      let bgClass = (tile.status === "complete" ? "bg-success" : "");
+      return "tile col-md-3 card " + bgClass;
+    }
+
+    function handleClick() {
+      if (!root.state.disableClick) {
+        root.checkTile(tile, ii);
+      }
+    }
+
+    let tileDisplay =  tile.status === "active" ? tile.value : tile.status === "complete" ? "✓": "";
+    let tileBox = <div className={classNames(tile.status)} key={ii} onClick= {handleClick}>
+      <p>{tileDisplay}</p> </div>;
+
+      return tileBox;
     });
 
   return (
     <div className="board">
-    <div className="row">
-    {boxes}
+      <div className="row">
+        {tileBoxes}
+      </div>
     </div>
-    </div>
-    );
+  );
 }

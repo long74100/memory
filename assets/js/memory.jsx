@@ -9,12 +9,11 @@ export default function run_memory(letters,root) {
 // App state for MemroyGame is:
 // {
 //    letters: String    // the letters used for the game
-//    board:   [int]     // the current board/ location for the letters
+//    board: [{ value:x ,status:x }]          // the current board
 //    completed: String  // the letters(tiles) that have been completed
-//    activeTile: String // the letter of the tile that has been clicked
-//    clicks: int        // the total number of clicks
+//    activeTilePos: int // the position of the current active tile
+//    clicks: int        // the number of clicks so far
 // }
-//
 
 class MemoryGame extends React.Component {
   constructor(props) {
@@ -22,19 +21,19 @@ class MemoryGame extends React.Component {
     this.state = {
       letters: props.letters,
       board: [],
-      completed: "",
-      activeTile: -1,
+      activeTilePos: -1,
       clicks: 0,
-
     };
+
+    this.resetActiveTiles = this.resetActiveTiles.bind(this);
   }
 
 
   componentDidMount() {
-    // shuffle letters and put them on the board
+
     function makeBoard(params) {
-      const board = [];
       // duplicate each letter to complete a full board
+      const board = [];
       const letters = params.letters.repeat(2);
       for (let i = 0; i < letters.length; i++) {
         board.push({ value: letters.charAt(i), status: "hidden" });
@@ -42,11 +41,12 @@ class MemoryGame extends React.Component {
       return board;
     }
 
+    // shuffle the board
     let board = this.shuffleArray(makeBoard(this.state));
+    // reset the state every restart
     let state = _.extend(this.state, {
       board: board,
-      completed: "",
-      activeTile: -1,
+      activeTilePos: -1,
       clicks: 0,
     });
 
@@ -61,10 +61,6 @@ class MemoryGame extends React.Component {
     return this.state.board;
   }
 
-  completed() {
-    return this.state.completed;
-  }
-
   active() {
     return this.state.activeTile;
   }
@@ -77,7 +73,6 @@ class MemoryGame extends React.Component {
   // shuffle an array
   shuffleArray(array) {
     let ar = array.slice(0);
-    // shuffle the board
     let i = 0;
     while (i < ar.length) {
       var r = Math.floor(Math.random() * ar.length);
@@ -89,77 +84,82 @@ class MemoryGame extends React.Component {
     return ar;
   }
 
-  checkTile(tile, ii) {
-    console.log(this.state.activeTile);
-    if (this.state.activeTile == -1) {
-      alert("hi");
-      this.flipActive(ii);
-        // var myVar;
-        //
-        // function myFunction() {
-        //     myVar = setTimeout(alertFunc, 3000);
-        // }
-        //
-        // function alertFunc() {
-        //     alert("Hello!");
-        // }
-        // myFunction();
+  checkTile(tile, pos) {
 
+    let board = this.state.board;
+    let activeTilePos = this.state.activeTilePos;
+
+    if (activeTilePos === -1) {
+      this.flipTile(pos, "active");
     } else {
-      if (tile.value === this.state.board[this.state.activeTile]) {
-          alert("yo");
+      if (pos != activeTilePos) {
+        if (tile.value === board[activeTilePos].value) {
+          this.flipTile(pos, "complete");
+          this.resetActiveTiles();
+        } else {
+          this.flipTile(pos, "active");
+          // reset the active tiles (Flip them back to hidden)
+          let reset = this.resetActiveTiles;
+          setTimeout(function() {
+            reset();
+          }, 2000);
+        }
       }
-
     }
 
   }
 
-  // changes the status of the tile at the position to active
-  flipActive(pos) {
+  // changes the status of the tile at a position to active or complete
+  flipTile(pos, status) {
     let board = this.state.board.slice(0);
-    board[pos].status = "active";
+    let activeTilePos = pos;
+    board[pos].status = status;
+
+    if (status === "complete") {
+      board[this.state.activeTilePos].status = status;
+      activeTilePos = -1;
+    }
+
     let state = _.extend(this.state, {
-      activeTile: pos,
+      activeTilePos: activeTilePos,
       board: board,
       clicks: this.state.clicks + 1 });
     this.setState(state);
+
   }
 
-  flipComplete(tile, pos) {
-    // let board = this.state.board.slice(0);
-    // if (tile.value === activeTile) {
-    //   board = _map(board, (tile, ii) => {
-    //     let t = tile.value === activeTile ? { value: tile.value, status: "complete"} : tile;
-    //     return t;
-    //   })
-    // } else {
 
-    }
+  resetActiveTiles() {
+    let board = this.state.board.slice(0);
+    _.map(board, (tile, pos) => {
+      let newTile =  tile.status === "active" ? _.extend(tile, {status:"hidden"}) : tile;
+      return newTile;
+    });
 
-  //   // activeTile = ;
-  //   // let state = _.extend(this.state, {
-  //   //   board: board });
-  //   //   this.setState(state);
-  // }
+    let state = _.extend(this.state, {
+      board: board,
+      activeTilePos: -1, });
+    this.setState(state);
+  }
+
 
   render() {
     return (
       <div className ="container">
-        <Board root={this} />
-        <div className="row gadgets">
-        <Clicks clicks={this.state.clicks} />
-        <Reset reset={this.reset.bind(this)} />
-        </div>
+      <Board root={this} />
+      <div className="row gadgets">
+      <Clicks clicks={this.state.clicks} />
+      <Reset reset={this.reset.bind(this)} />
       </div>
-    );
+      </div>
+      );
   }
 
 }
 
 function Clicks(params) {
   return <div className="col-md-6">
-  <p><b>Clicks: {params.clicks}</b></p>
-  </div>;
+        <p><b>Clicks: {params.clicks}</b></p></div>
 }
 
 function Reset(params) {
@@ -167,7 +167,7 @@ function Reset(params) {
     <div className="col-md-6">
     <Button onClick={params.reset}>Reset Game</Button>
     </div>
-  )
+    )
 
 }
 
@@ -176,16 +176,16 @@ function Board(props) {
   let tiles = root.tiles();
 
   let boxes = _.map(tiles, (tile, ii) => {
-    let display =  tile.status === "active" ? tile.value : "?";
+    let display =  (tile.status === "active" || tile.status === "complete") ? tile.value : "?";
     return <div className="tile col-md-3 card" key={ii} onClick= {
-        () => root.checkTile(tile, ii)}> <p>{display}</p> </div>;
-      });
+      () => root.checkTile(tile, ii)}> <p>{display}</p> </div>;
+    });
 
-      return (
-        <div className="board">
-          <div className="row">
-            {boxes}
-          </div>
-        </div>
-      );
-    }
+  return (
+    <div className="board">
+    <div className="row">
+    {boxes}
+    </div>
+    </div>
+    );
+}

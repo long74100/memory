@@ -146,7 +146,6 @@ class MemoryGame extends React.Component {
       disableClick: !this.state.disableClick,
     });
     this.setState(state);
-    console.log(this.state.disableClick);
   }
 
 

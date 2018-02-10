@@ -2,8 +2,8 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import { Button } from 'reactstrap';
 
-export default function run_memory(letters,root) {
-  ReactDOM.render(<MemoryGame letters={letters} />, root);
+export default function run_memory(letters,root, channel) {
+  ReactDOM.render(<MemoryGame letters={letters} channel={channel}/>, root);
 }
 
 // App state for MemroyGame is:
@@ -18,6 +18,8 @@ export default function run_memory(letters,root) {
 class MemoryGame extends React.Component {
   constructor(props) {
     super(props);
+    this.channel = props.channel;
+
     this.state = {
       letters: props.letters,
       board: [],
@@ -26,8 +28,17 @@ class MemoryGame extends React.Component {
       disableClick: false,
     };
 
+    this.channel.join()
+        .receive("ok", this.gotView.bind(this))
+        .receive("error", resp => { console.log("Unable to join", resp) });
+
     this.resetActiveTiles = this.resetActiveTiles.bind(this);
     this.changeClickPerm = this.changeClickPerm.bind(this);
+  }
+
+  gotView(view) {
+    console.log("New view", view);
+    this.setState(view.game);
   }
 
 

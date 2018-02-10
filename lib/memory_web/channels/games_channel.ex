@@ -3,11 +3,17 @@ defmodule MemoryWeb.GamesChannel do
 
   def join("games:" <> name, payload, socket) do
     if authorized?(payload) do
-      {:ok, %{"join" => name}, socket}
+      game = Memory.Game.new()
+      {:ok, %{"join" => name, "game" => Memory.Game.client_view(game)}, socket}
     else
       {:error, %{reason: "unauthorized"}}
     end
   end
+
+  def handle_in("reset", socket) do
+    {:reply, {:ok, %{ "game" => Memory.Game.reset()}}, socket}
+  end
+
 
 
   # It is also common to receive messages from the client and

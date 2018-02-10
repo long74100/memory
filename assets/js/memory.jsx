@@ -2,8 +2,8 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import { Button } from 'reactstrap';
 
-export default function run_memory(letters,root, channel) {
-  ReactDOM.render(<MemoryGame letters={letters} channel={channel}/>, root);
+export default function run_memory(root, channel) {
+  ReactDOM.render(<MemoryGame channel={channel}/>, root);
 }
 
 // App state for MemroyGame is:
@@ -21,11 +21,6 @@ class MemoryGame extends React.Component {
     this.channel = props.channel;
 
     this.state = {
-      letters: props.letters,
-      board: [],
-      activeTilePos: -1,
-      clicks: 0,
-      disableClick: false,
     };
 
     this.channel.join()
@@ -37,43 +32,13 @@ class MemoryGame extends React.Component {
   }
 
   gotView(view) {
-    console.log("New view", view);
     this.setState(view.game);
-  }
-
-
-  componentDidMount() {
-
-    function makeBoard(params) {
-      // duplicate each letter to complete a full board
-      const board = [];
-      const letters = params.letters.repeat(2);
-      for (let i = 0; i < letters.length; i++) {
-        board.push({ value: letters.charAt(i), status: "hidden" });
-      }
-      return board;
-    }
-
-    // shuffle the board
-    let board = this.shuffleArray(makeBoard(this.state));
-    // reset the state every restart
-    let state = _.extend(this.state, {
-      board: board,
-      activeTilePos: -1,
-      clicks: 0,
-      disableClick:false,
-    });
-
-    this.setState(state);
-  }
-
-  componentWillUnmount() {
-    clearInterval(this.timerID);
   }
 
   // reset the game
   reset() {
-    this.componentDidMount();
+    this.channel.push("reset")
+      .receive("ok", this.gotView.bind(this));
   }
 
   // shuffle an array
@@ -194,6 +159,7 @@ function Board(props) {
   let root = props.root;
   let tiles = root.state.board;
 
+  console.log(tiles)
   let tileBoxes = _.map(tiles, (tile, ii) => {
     function classNames() {
       let bgClass = (tile.status === "complete" ? "bg-success" : "");

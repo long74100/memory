@@ -26,10 +26,10 @@ function init() {
   let root = document.getElementById('root');
 
   if (root) {
-   console.log("joining channel...")
-   let channel = socket.channel("games:" + window.gameName, {});
-   run_memory("ABCDEFGH", root, channel);
- }
+    let channel = socket.channel("games:" + window.gameName, {});
+    run_memory(root, channel);
+  }
+
 }
 
 

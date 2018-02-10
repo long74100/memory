@@ -4,14 +4,26 @@ defmodule MemoryWeb.GamesChannel do
   def join("games:" <> name, payload, socket) do
     if authorized?(payload) do
       game = Memory.Game.new()
+      socket = socket
+      |> assign(:game, game)
+      |> assign(:name, name)
       {:ok, %{"join" => name, "game" => Memory.Game.client_view(game)}, socket}
     else
       {:error, %{reason: "unauthorized"}}
     end
   end
 
-  def handle_in("reset", socket) do
-    {:reply, {:ok, %{ "game" => Memory.Game.reset()}}, socket}
+  def handle_in("checkTile", %{"position" => pos}, socket) do
+    game = Memory.Game.checkTile(socket.assigns[:game], pos)
+    socket = assign(socket, :game, game)
+    {:reply, {:ok, %{ "game" => Memory.Game.client_view(socket.assigns[:game])}}, socket}
+
+  end
+
+  def handle_in("reset", payload, socket) do
+    game = Memory.Game.reset()
+    socket = assign(socket, :game, game)
+    {:reply, {:ok, %{ "game" => Memory.Game.client_view(game)}}, socket}
   end
 
 

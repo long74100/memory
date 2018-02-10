@@ -19,87 +19,73 @@ class MemoryGame extends React.Component {
   constructor(props) {
     super(props);
     this.channel = props.channel;
-
-    this.state = {
-    };
+    this.state = { board:[] };
 
     this.channel.join()
         .receive("ok", this.gotView.bind(this))
         .receive("error", resp => { console.log("Unable to join", resp) });
 
-    this.resetActiveTiles = this.resetActiveTiles.bind(this);
-    this.changeClickPerm = this.changeClickPerm.bind(this);
+    this.gotView = this.gotView.bind(this);
   }
 
   gotView(view) {
     this.setState(view.game);
   }
 
-  // reset the game
   reset() {
     this.channel.push("reset")
-      .receive("ok", this.gotView.bind(this));
+      .receive("ok", this.gotView);
   }
 
-  // shuffle an array
-  shuffleArray(array) {
-    let ar = array.slice(0);
-    let i = 0;
-    while (i < ar.length) {
-      var r = Math.floor(Math.random() * ar.length);
-      let temp = ar[r];
-      ar[r] = ar[i];
-      ar[i] = temp;
-      i++;
-    }
-    return ar;
-  }
-
-  checkTile(tile, pos) {
-
-    let board = this.state.board;
-    let activeTilePos = this.state.activeTilePos;
-
-    if (activeTilePos === -1) {
-      this.flipTile(pos, "active");
-    } else {
-      if (pos != activeTilePos) {
-        if (tile.value === board[activeTilePos].value) {
-          this.flipTile(pos, "complete");
-          //this.resetActiveTiles();
-        } else {
-          this.flipTile(pos, "active");
-          // reset the active tiles (Flip them back to hidden)
-        }
-
-        let reset = this.resetActiveTiles;
-        let changeClickPerm = this.changeClickPerm;
-        changeClickPerm();
-        setTimeout(function() {
-          reset();
-          changeClickPerm();
-        }, 1500);
-      }
-    }
-
-  }
+  // checkTile(tile, pos) {
+  //
+  //   let board = this.state.board;
+  //   let activeTilePos = this.state.activeTilePos;
+  //
+  //   if (activeTilePos === -1) {
+  //     this.flipTile(pos, "active");
+  //   } else {
+  //     if (pos != activeTilePos) {
+  //       if (tile.value === board[activeTilePos].value) {
+  //         this.flipTile(pos, "complete");
+  //         //this.resetActiveTiles();
+  //       } else {
+  //         this.flipTile(pos, "active");
+  //         // reset the active tiles (Flip them back to hidden)
+  //       }
+  //
+  //       let reset = this.resetActiveTiles;
+  //       let changeClickPerm = this.changeClickPerm;
+  //       changeClickPerm();
+  //       setTimeout(function() {
+  //         reset();
+  //         changeClickPerm();
+  //       }, 1500);
+  //     }
+  //   }
+  //
+  // }
 
   // changes the status of the tile at a position to active or complete
   flipTile(pos, status) {
-    let board = this.state.board.slice(0);
-    let activeTilePos = pos;
-    board[pos].status = status;
-
-    if (status === "complete") {
-      board[this.state.activeTilePos].status = status;
-      activeTilePos = -1;
-    }
-
-    let state = _.extend(this.state, {
-      activeTilePos: activeTilePos,
-      board: board,
-      clicks: this.state.clicks + 1 });
-    this.setState(state);
+    this.channel.push("flip", {position: pos, status: status})
+      .receive("ok", this.gotView);
+    // // this.channel.push("reset")
+    // //   .receive("ok", this.gotView.bind(this));
+    // let board = this.state.board.slice(0);
+    // let activeTilePos = pos;
+    // board[pos].status = status;
+    //
+    // if (status === "complete") {
+    //   board[this.state.activeTilePos].status = status;
+    //   activeTilePos = -1;
+    // }
+    //
+    // let state = _.extend(this.state, {
+    //   activeTilePos: activeTilePos,
+    //   board: board,
+    //   clicks: this.state.clicks + 1 });
+    // this.setState(state);
 
   }
 
@@ -128,7 +114,7 @@ class MemoryGame extends React.Component {
   render() {
     return (
       <div className ="container">
-        <Board root={this} />
+        <Board root={this} channel={this.channel}/>
           <div className="row gadgets">
           <Clicks clicks={this.state.clicks} />
           <Reset reset={this.reset.bind(this)} />
@@ -143,7 +129,7 @@ function Clicks(params) {
   return (
     <div className="col-md-6">
         <p><b>Clicks: {params.clicks}</b></p></div>
-      );
+    );
 }
 
 function Reset(params) {
@@ -156,10 +142,10 @@ function Reset(params) {
 }
 
 function Board(props) {
+  let channel = props.channel;
   let root = props.root;
   let tiles = root.state.board;
 
-  console.log(tiles)
   let tileBoxes = _.map(tiles, (tile, ii) => {
     function classNames() {
       let bgClass = (tile.status === "complete" ? "bg-success" : "");
@@ -167,9 +153,8 @@ function Board(props) {
     }
 
     function handleClick() {
-      if (!root.state.disableClick) {
-        root.checkTile(tile, ii);
-      }
+        channel.push("checkTile", {position: ii})
+        .receive("ok", root.gotView);
     }
 
     let tileDisplay =  tile.status === "active" ? tile.value : tile.status === "complete" ? "✓": "";

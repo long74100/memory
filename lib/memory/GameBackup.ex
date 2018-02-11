@@ -1,3 +1,6 @@
+# This module was made by following Professor Tuck's codes, all credits go to Professor Tuck.
+# The code can be found at https://github.com/NatTuck/hangman2/blob/proc-state/lib/hangman/game_backup.ex
+
 defmodule Memory.GameBackup do
   use Agent
   def start_link do

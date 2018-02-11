@@ -18,7 +18,6 @@ import "phoenix_html";
 // paths "./socket" or full ones "web/static/js/socket".
 
 import socket from "./socket"
-
 import run_memory from "./memory";
 
 function init() {
@@ -31,7 +30,6 @@ function init() {
   }
 
 }
-
 
 // Use jQuery to delay until page loaded.
 $(init);

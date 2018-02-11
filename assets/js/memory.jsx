@@ -61,7 +61,6 @@ class MemoryGame extends React.Component {
       </div>
     );
   }
-
 }
 
 function Clicks(params) {

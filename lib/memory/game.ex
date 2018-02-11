@@ -24,81 +24,72 @@ defmodule Memory.Game do
   end
 
   def checkTile(game, position) do
-    if game.activeTilePos == -1 do
-      flipTile(game, position, "active")
-      |> Map.put(:activeTilePos, position)
+    case _checkTile(game.board, game.activeTilePos, position) do
+      {:flipActive} ->
+        game = flipTile(game, position, "active")
+        |> Map.put(:activeTilePos, position)
+        |> Map.put(:clicks, game.clicks+1)
+
+        {:ok, game}
+      {:complete} ->
+        game = flipTile(game, position, "complete")
+        |> flipTile(game.activeTilePos, "complete")
+        |> Map.put(:activeTilePos, -1)
+        |> Map.put(:clicks, game.clicks+1)
+
+        {:ok, game}
+      {:flipAndReset} ->
+        game = flipTile(game, position, "active")
+        |> Map.put(:activeTilePos, -1)
+        |> Map.put(:clicks, game.clicks+1)
+        {:delay, game}
+      {:stay} ->
+        {:ok, game}
+    end
+  end
+  def _checkTile(board, active, current) when active == -1  do
+    current = Enum.at(board, current)
+    if current.status != "complete" do
+      {:flipActive}
     else
-      game
+      {:stay}
+    end
+  end
+  def _checkTile(board, active, current) when active != current do
+    activeValue = getTileValue(board, active)
+    currentValue = getTileValue(board, current)
+
+    if activeValue == currentValue do
+      {:complete}
+    else
+      {:flipAndReset}
     end
   end
 
   def flipTile(game, position, status) do
     %{value: x} = game.board
     |> Enum.at(position)
-    board = game.board
-    |> List.replace_at(position, %{value: x, status: status} )
-    Map.put(game, :board, board)
-    |> Map.put(:clicks, game.clicks+1)
 
+    board = game.board
+    |> List.replace_at(position, %{value: x, status: status})
+
+    Map.put(game, :board, board)
+  end
+
+  def resetActives(game) do
+    board = game.board
+    |> Enum.map(fn x -> if x.status == "active" do %{value: x.value, status: "hidden"} else x end end)
+    Map.put(game, :board, board)
   end
 
   def reset() do
     new()
   end
 
-  @docp """
-  checkTile(tile, pos) {
+  def getTileValue(board, pos) do
+    board
+    |> Enum.at(pos)
+    |> (fn x -> x.value end).()
+  end
 
-    let board = this.state.board;
-    let activeTilePos = this.state.activeTilePos;
-
-    if (activeTilePos === -1) {
-      this.flipTile(pos, "active");
-    } else {
-      if (pos != activeTilePos) {
-        if (tile.value === board[activeTilePos].value) {
-          this.flipTile(pos, "complete");
-          //this.resetActiveTiles();
-        } else {
-          this.flipTile(pos, "active");
-          // reset the active tiles (Flip them back to hidden)
-        }
-
-        let reset = this.resetActiveTiles;
-        let changeClickPerm = this.changeClickPerm;
-        changeClickPerm();
-        setTimeout(function() {
-          reset();
-          changeClickPerm();
-        }, 1500);
-      }
-    }
-
-  }
-
-
-
-
-
-
-
-  // changes the status of the tile at a position to active or complete
-  flipTile(pos, status) {
-    let board = this.state.board.slice(0);
-    let activeTilePos = pos;
-    board[pos].status = status;
-
-    if (status === "complete") {
-      board[this.state.activeTilePos].status = status;
-      activeTilePos = -1;
-    }
-
-    let state = _.extend(this.state, {
-      activeTilePos: activeTilePos,
-      board: board,
-      clicks: this.state.clicks + 1 });
-    this.setState(state);
-
-  }
-  """
 end

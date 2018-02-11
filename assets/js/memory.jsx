@@ -37,79 +37,18 @@ class MemoryGame extends React.Component {
       .receive("ok", this.gotView);
   }
 
-  // checkTile(tile, pos) {
-  //
-  //   let board = this.state.board;
-  //   let activeTilePos = this.state.activeTilePos;
-  //
-  //   if (activeTilePos === -1) {
-  //     this.flipTile(pos, "active");
-  //   } else {
-  //     if (pos != activeTilePos) {
-  //       if (tile.value === board[activeTilePos].value) {
-  //         this.flipTile(pos, "complete");
-  //         //this.resetActiveTiles();
-  //       } else {
-  //         this.flipTile(pos, "active");
-  //         // reset the active tiles (Flip them back to hidden)
-  //       }
-  //
-  //       let reset = this.resetActiveTiles;
-  //       let changeClickPerm = this.changeClickPerm;
-  //       changeClickPerm();
-  //       setTimeout(function() {
-  //         reset();
-  //         changeClickPerm();
-  //       }, 1500);
-  //     }
-  //   }
-  //
-  // }
-
   // changes the status of the tile at a position to active or complete
   flipTile(pos, status) {
     this.channel.push("flip", {position: pos, status: status})
       .receive("ok", this.gotView);
-    // // this.channel.push("reset")
-    // //   .receive("ok", this.gotView.bind(this));
-    // let board = this.state.board.slice(0);
-    // let activeTilePos = pos;
-    // board[pos].status = status;
-    //
-    // if (status === "complete") {
-    //   board[this.state.activeTilePos].status = status;
-    //   activeTilePos = -1;
-    // }
-    //
-    // let state = _.extend(this.state, {
-    //   activeTilePos: activeTilePos,
-    //   board: board,
-    //   clicks: this.state.clicks + 1 });
-    // this.setState(state);
-
-  }
-
-
-  resetActiveTiles() {
-    let board = this.state.board.slice(0);
-    _.map(board, (tile, pos) => {
-      let newTile =  tile.status === "active" ? _.extend(tile, {status:"hidden"}) : tile;
-      return newTile;
-    });
-
-    let state = _.extend(this.state, {
-      board: board,
-      activeTilePos: -1, });
-    this.setState(state);
   }
 
   changeClickPerm() {
-    let state = _.extend(this.state, {
-      disableClick: !this.state.disableClick,
-    });
-    this.setState(state);
-  }
-
+   let state = _.extend(this.state, {
+     disableClick: !this.state.disableClick,
+   });
+   this.setState(state);
+ }
 
   render() {
     return (
@@ -120,7 +59,7 @@ class MemoryGame extends React.Component {
           <Reset reset={this.reset.bind(this)} />
         </div>
       </div>
-      );
+    );
   }
 
 }
@@ -135,10 +74,9 @@ function Clicks(params) {
 function Reset(params) {
   return (
     <div className="col-md-6">
-    <Button onClick={params.reset}>Reset Game</Button>
+      <Button onClick={params.reset}>Reset Game</Button>
     </div>
   );
-
 }
 
 function Board(props) {
@@ -153,14 +91,27 @@ function Board(props) {
     }
 
     function handleClick() {
-        channel.push("checkTile", {position: ii})
-        .receive("ok", root.gotView);
+        function delayAndReset(view) {
+          root.gotView(view);
+          root.changeClickPerm();
+
+          setTimeout(function() {
+            root.changeClickPerm();
+            channel.push("resetActives")
+            .receive("ok", root.gotView)
+            }, 1200);
+        }
+
+        if (!root.state.disableClick) {
+          channel.push("checkTile", {position: ii})
+          .receive("ok", root.gotView)
+          .receive("delay", delayAndReset);
+        }
     }
 
     let tileDisplay =  tile.status === "active" ? tile.value : tile.status === "complete" ? "✓": "";
     let tileBox = <div className={classNames(tile.status)} key={ii} onClick= {handleClick}>
       <p>{tileDisplay}</p> </div>;
-
       return tileBox;
     });
 

@@ -3,7 +3,7 @@ defmodule MemoryWeb.GamesChannel do
 
   def join("games:" <> name, payload, socket) do
     if authorized?(payload) do
-      game = Memory.Game.new()
+      game = Memory.GameBackup.load(name) || Memory.Game.new()
       socket = socket
       |> assign(:game, game)
       |> assign(:name, name)
@@ -14,25 +14,24 @@ defmodule MemoryWeb.GamesChannel do
   end
 
   def handle_in("checkTile", %{"position" => pos}, socket) do
-    game = Memory.Game.checkTile(socket.assigns[:game], pos)
+    {type, game} = Memory.Game.checkTile(socket.assigns[:game], pos)
     socket = assign(socket, :game, game)
-    {:reply, {:ok, %{ "game" => Memory.Game.client_view(socket.assigns[:game])}}, socket}
-
+    Memory.GameBackup.save(socket.assigns[:name], game)
+    {:reply, {type, %{ "game" => Memory.Game.client_view(socket.assigns[:game])}}, socket}
   end
 
   def handle_in("reset", payload, socket) do
     game = Memory.Game.reset()
+    Memory.GameBackup.save(socket.assigns[:name], game)
     socket = assign(socket, :game, game)
     {:reply, {:ok, %{ "game" => Memory.Game.client_view(game)}}, socket}
   end
 
-
-
-  # It is also common to receive messages from the client and
-  # broadcast to everyone in the current topic (games:lobby).
-  def handle_in("shout", payload, socket) do
-    broadcast socket, "shout", payload
-    {:noreply, socket}
+  def handle_in("resetActives", payload, socket) do
+    game = Memory.Game.resetActives(socket.assigns[:game])
+    Memory.GameBackup.save(socket.assigns[:name], game)
+    socket = assign(socket, :game, game)
+    {:reply, {:ok, %{ "game" => Memory.Game.client_view(game)}}, socket}
   end
 
   # Add authorization logic here as required.
